@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Observers;
+namespace App\Modules\User\Observers;
 
 use App\User;
 
@@ -15,7 +15,5 @@ class UserObserver
     public function forceDeleted(User $user)
     {
         $user->userData()->onlyTrashed()->forceDelete();
-
-        $user->userData->delete();
     }
 }
