@@ -2,11 +2,11 @@
 
 namespace App\Modules\User\Http\Controllers;
 
-use App\User;
+use App\Modules\Core\User;
 use Illuminate\Support\Facades\File;
 use App\Http\Controllers\Controller;
 
-use App\Language;
+use App\Modules\Core\Language;
 
 class UserController extends Controller
 {
