@@ -3,7 +3,7 @@
 
 namespace App\Modules\User\Observers;
 
-use App\User;
+use App\Modules\Core\User;
 
 class UserObserver
 {
