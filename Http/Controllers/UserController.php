@@ -17,12 +17,13 @@ class UserController extends Controller
 
     public function getUserInfo()
     {
-        $user = User::where('user_id', auth()->user()->user_id)->with('roles')->first();
+        $user = User::where('user_id', auth()->user()->user_id)->with(['roles', 'userData'])->first();
 
         return response()->json([
             'name' => $user->name,
             'user_id' => $user->user_id,
-            'role_id' => $user->role->id
+            'role_id' => $user->role->id,
+            'user_data' => $user->userData
         ]);
     }
 
