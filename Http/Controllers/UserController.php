@@ -58,7 +58,12 @@ class UserController extends Controller
 
         $user->save();
 
-        return response()->json(['Tebrikler']);
+        return response()->json([
+            'header' => 'İşlem Başarılı',
+            'message' => 'Profil güncellendi',
+            'state' => 'success',
+            'action' => 'Tamam'
+        ]);
     }
 
     public function postUserProfileImage()
@@ -87,21 +92,68 @@ class UserController extends Controller
 
         request()->file('file')->move($path, $store_name);
 
-        return response()->json(['TEBRIKLER']);
+        return response()->json([
+            'header' => 'İşlem Başarılı',
+            'message' => 'Profil Fotoğrafı güncellendi',
+            'state' => 'success',
+            'action' => 'Tamam'
+        ]);
     }
 
     public function getMenus($language_slug)
     {
-        $menus = auth()->user()->role->menus()->orderBy('weight', 'DESC')->get()->map(function ($menu) use ($language_slug) {
+        $menus = auth()->user()->role->menus()->orderBy('weight', 'DESC')->get()->
+        map(function ($menu) use ($language_slug) {
             return [
-                'name' => json_decode($menu->name, true)[$language_slug],
-                'tooltip' => json_decode($menu->tooltip, true)[$language_slug],
+                'id' => $menu->id,
+                'name' => $menu->name[$language_slug] ?? '',
+                'tooltip' => $menu->tooltip[$language_slug] ?? '',
                 'url' => $menu->url,
-                'weight' => $menu->weight
+                'weight' => $menu->weight,
+                'parent' => $menu->parent,
+                'children' => []
             ];
         })->toArray();
 
+        for ($i = 0, $count = count($menus); $i < $count; $i++) {
+
+            $menu = array_pop($menus);
+
+            $placed = false;
+
+            foreach ($menus as $key => $target) {
+                if($this->recurseMenus($menus[$key], $menu)) {
+                    $placed = true;
+                    break;
+                }
+            }
+
+            if(!$placed) {
+                array_unshift($menus, $menu);
+            }
+        }
+
+        usort($menus, function ($a, $b) {
+            return $a['weight'] - $b['weight'];
+        });
+
         return response()->json($menus);
+    }
+
+    private function recurseMenus(&$target, &$menu)
+    {
+        if ($menu['parent'] === $target['id']) {
+            $target['children'][] = $menu;
+            return true;
+        }
+
+        foreach ($target['children'] as $key => $child) {
+            if($this->recurseMenus($target['children'][$key], $menu)) {
+                return true;
+            };
+        }
+
+        return false;
     }
 
     private function localizeField($field)
