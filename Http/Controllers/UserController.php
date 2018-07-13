@@ -15,7 +15,7 @@ class UserController extends Controller
         $this->middleware(['auth:api']);
     }
 
-    public function getUserInfo()
+    public function getUser()
     {
         $user = User::where('user_id', auth()->user()->user_id)->with(['roles', 'userData'])->first();
 
@@ -102,18 +102,20 @@ class UserController extends Controller
 
     public function getMenus($language_slug)
     {
-        $menus = auth()->user()->role->menus()->orderBy('weight', 'DESC')->get()->
-        map(function ($menu) use ($language_slug) {
-            return [
-                'id' => $menu->id,
-                'name' => $menu->name[$language_slug] ?? '',
-                'tooltip' => $menu->tooltip[$language_slug] ?? '',
-                'url' => $menu->url,
-                'weight' => $menu->weight,
-                'parent' => $menu->parent,
-                'children' => []
-            ];
-        })->toArray();
+        $menus = auth()->user()->role->menus()
+            ->orderBy('weight', 'DESC')
+            ->get()
+            ->map(function ($menu) use ($language_slug) {
+                return [
+                    'id' => $menu->id,
+                    'name' => $menu->name[$language_slug] ?? '',
+                    'tooltip' => $menu->tooltip[$language_slug] ?? '',
+                    'url' => $menu->url,
+                    'weight' => $menu->weight,
+                    'parent' => $menu->parent,
+                    'children' => []
+                ];
+            })->toArray();
 
         for ($i = 0, $count = count($menus); $i < $count; $i++) {
 
@@ -122,13 +124,13 @@ class UserController extends Controller
             $placed = false;
 
             foreach ($menus as $key => $target) {
-                if($this->recurseMenus($menus[$key], $menu)) {
+                if ($this->recurseMenus($menus[$key], $menu)) {
                     $placed = true;
                     break;
                 }
             }
 
-            if(!$placed) {
+            if (!$placed) {
                 array_unshift($menus, $menu);
             }
         }
@@ -148,7 +150,7 @@ class UserController extends Controller
         }
 
         foreach ($target['children'] as $key => $child) {
-            if($this->recurseMenus($target['children'][$key], $menu)) {
+            if ($this->recurseMenus($target['children'][$key], $menu)) {
                 return true;
             };
         }

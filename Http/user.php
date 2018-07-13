@@ -1,6 +1,6 @@
 <?php
 
-Route::get('info', 'UserController@getUserInfo');
+Route::get('info', 'UserController@getUser');
 
 Route::get('profile', 'UserController@getUserProfile');
 
