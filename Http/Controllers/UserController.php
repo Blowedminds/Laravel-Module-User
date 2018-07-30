@@ -102,20 +102,54 @@ class UserController extends Controller
 
     public function getMenus($language_slug)
     {
-        $menus = auth()->user()->role->menus()
-            ->orderBy('weight', 'DESC')
-            ->get()
-            ->map(function ($menu) use ($language_slug) {
-                return [
-                    'id' => $menu->id,
-                    'name' => $menu->name[$language_slug] ?? '',
-                    'tooltip' => $menu->tooltip[$language_slug] ?? '',
-                    'url' => $menu->url,
-                    'weight' => $menu->weight,
-                    'parent' => $menu->parent,
-                    'children' => []
-                ];
-            })->toArray();
+
+        $menus = auth()->user()->role->with('permissions.menus')
+            ->first()
+            ->permissions
+            ->reduce(function ($menus, $reduce) use ($language_slug) {
+
+                foreach ($reduce->menus as $key => $value) {
+
+                    $exist = false;
+
+                    foreach ($menus as $menu) {
+                        if ($menu['id'] === $value['id']) {
+                            $exist = true;
+                            break;
+                        }
+                    }
+
+                    if (!$exist) {
+                        $value->name = $value->name[$language_slug];
+
+                        $value->tooltip = $value->tooltip[$language_slug];
+
+                        $value = $value->toArray();
+
+                        $value['children'] = [];
+
+                        $reduce->menus[$key] = $value;
+                        $menus[] = $reduce->menus[$key];
+                    }
+                }
+
+                return $menus;
+            }, []);
+
+        //        $menus = auth()->user()->role->menus()
+//            ->orderBy('weight', 'DESC')
+//            ->get()
+//            ->map(function ($menu) use ($language_slug) {
+//                return [
+//                    'id' => $menu->id,
+//                    'name' => $menu->name[$language_slug] ?? '',
+//                    'tooltip' => $menu->tooltip[$language_slug] ?? '',
+//                    'url' => $menu->url,
+//                    'weight' => $menu->weight,
+//                    'parent' => $menu->parent,
+//                    'children' => []
+//                ];
+//            })->toArray();
 
         for ($i = 0, $count = count($menus); $i < $count; $i++) {
 
