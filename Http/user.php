@@ -10,4 +10,4 @@ Route::post('profile-image', 'UserController@postUserProfileImage');
 
 Route::get('menus/{language_slug}', 'UserController@getMenus');
 
-Route::get('dashboard', function(){return response()->json(null, 200);});
+Route::get('dashboard', 'UserController@getDashboard');

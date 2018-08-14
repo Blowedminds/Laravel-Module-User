@@ -3,6 +3,7 @@
 namespace App\Modules\User\Http\Controllers;
 
 use App\Modules\Core\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use App\Http\Controllers\Controller;
 
@@ -98,6 +99,25 @@ class UserController extends Controller
             'state' => 'success',
             'action' => 'Tamam'
         ]);
+    }
+
+    public function getDashboard()
+    {
+        $user = auth()->user();
+
+        $dashboard = Cache::remember("$user->user_id:dashboard", 0, function() use ($user) {
+            $cache = [
+                'articles' => [],
+            ];
+
+            $cache['articles']['most_viewed'] = $user->articles()->with('contents')->orderBy('views', 'desc')->take(3)->get();
+
+            return $cache;
+        });
+
+        dd($dashboard);
+
+        return response()->json($dashboard);
     }
 
     public function getMenus($language_slug)
