@@ -8,6 +8,6 @@ Route::post('profile', 'UserController@postUserProfile');
 
 Route::post('profile-image', 'UserController@postUserProfileImage');
 
-Route::get('menus/{language_slug}', 'UserController@getMenus');
+Route::get('menus/{language_slug}', 'UserController@getUserMenus');
 
 Route::get('dashboard', 'UserController@getDashboard');

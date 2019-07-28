@@ -2,9 +2,9 @@
 
 namespace App\Modules\User\Http\Controllers;
 
+use App\Modules\Core\Traits\MenuTrait;
 use App\Modules\Core\User;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\File;
 use App\Http\Controllers\Controller;
 
 use App\Modules\Core\Language;
@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
+    use MenuTrait;
+
     public function __construct()
     {
         $this->middleware(['auth:api']);
@@ -19,7 +21,7 @@ class UserController extends Controller
 
     public function getUser()
     {
-        $user = User::where('user_id', auth()->user()->user_id)->with(['roles', 'userData'])->first();
+        $user = User::where('user_id', auth()->user()->user_id)->with(['roles', 'userData'])->firstOrFail();
 
         return response()->json([
             'name' => $user->name,
@@ -32,7 +34,7 @@ class UserController extends Controller
     public function getUserProfile()
     {
 
-        $user = User::where('user_id', auth()->user()->user_id)->with(['userData', 'roles'])->first()->toArray();
+        $user = User::where('user_id', auth()->user()->user_id)->with(['userData', 'roles'])->firstOrFail()->toArray();
 
         $user['user_data']['biography'] = $this->localizeField($user['user_data']['biography']);
 
@@ -50,7 +52,7 @@ class UserController extends Controller
             'biography' => 'required'
         ]);
 
-        $user = User::where('user_id', auth()->user()->user_id)->with('userData')->first();
+        $user = User::where('user_id', auth()->user()->user_id)->with('userData')->firstOrFail();
 
         $user->name = request()->input('name');
 
@@ -75,15 +77,11 @@ class UserController extends Controller
 
         $user_data = auth()->user()->userData;
 
+        Storage::disk('public')->delete("authors/images/" . $user_data->profile_image);
+
         $file = request()->file('file');
 
-        $extension = $file->extension();
-
-        $u_id = uniqid('img_');
-
-        $store_name = $u_id . "." . $extension;
-
-        Storage::disk('public')->delete("authors/images/" . $user_data->profile_image);
+        $store_name = uniqid('img_') . "." . $file->extension();
 
         $user_data->profile_image = $store_name;
 
@@ -114,67 +112,16 @@ class UserController extends Controller
             return $cache;
         });
 
-        dd($dashboard);
-
         return response()->json($dashboard);
     }
 
-    public function getMenus($language_slug)
+    public function getUserMenus($locale)
     {
-        $menus = auth()->user()->role->menus()
-            ->orderBy('weight', 'DESC')
-            ->get()
-            ->map(function ($menu) use ($language_slug) {
-                return [
-                    'id' => $menu->id,
-                    'name' => $menu->name[$language_slug] ?? '',
-                    'tooltip' => $menu->tooltip[$language_slug] ?? '',
-                    'url' => $menu->url,
-                    'weight' => $menu->weight,
-                    'parent' => $menu->parent,
-                    'children' => []
-                ];
-            })->toArray();
+        $role_slug = auth()->user()->role->slug;
 
-        for ($i = 0, $count = count($menus); $i < $count; $i++) {
-
-            $menu = array_pop($menus);
-
-            $placed = false;
-
-            foreach ($menus as $key => $target) {
-                if ($this->recurseMenus($menus[$key], $menu)) {
-                    $placed = true;
-                    break;
-                }
-            }
-
-            if (!$placed) {
-                array_unshift($menus, $menu);
-            }
-        }
-
-        usort($menus, function ($a, $b) {
-            return $a['weight'] - $b['weight'];
-        });
+        $menus = $this->getRoleMenus($locale, $role_slug);
 
         return response()->json($menus);
-    }
-
-    private function recurseMenus(&$target, &$menu)
-    {
-        if ($menu['parent'] === $target['id']) {
-            $target['children'][] = $menu;
-            return true;
-        }
-
-        foreach ($target['children'] as $key => $child) {
-            if ($this->recurseMenus($target['children'][$key], $menu)) {
-                return true;
-            };
-        }
-
-        return false;
     }
 
     private function localizeField($field)
