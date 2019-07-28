@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\File;
 use App\Http\Controllers\Controller;
 
 use App\Modules\Core\Language;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -62,7 +63,6 @@ class UserController extends Controller
         return response()->json([
             'header' => 'İşlem Başarılı',
             'message' => 'Profil güncellendi',
-            'state' => 'success',
             'action' => 'Tamam'
         ]);
     }
@@ -83,20 +83,19 @@ class UserController extends Controller
 
         $store_name = $u_id . "." . $extension;
 
-        File::delete("images/author/" . $user_data->profile_image);
+        Storage::disk('public')->delete("authors/images/" . $user_data->profile_image);
 
         $user_data->profile_image = $store_name;
 
         $user_data->save();
 
-        $path = rtrim(app()->basePath('public/' . "images/author"), '/');
+        $path = Storage::disk('public')->path('authors/images/');
 
         request()->file('file')->move($path, $store_name);
 
         return response()->json([
             'header' => 'İşlem Başarılı',
             'message' => 'Profil Fotoğrafı güncellendi',
-            'state' => 'success',
             'action' => 'Tamam'
         ]);
     }
