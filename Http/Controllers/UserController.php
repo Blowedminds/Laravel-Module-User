@@ -102,7 +102,7 @@ class UserController extends Controller
     {
         $user = auth()->user();
 
-        $dashboard = Cache::remember("$user->user_id:dashboard", 0, function() use ($user) {
+        $dashboard = Cache::remember("{$user->user_id}:dashboard", 0, static function() use ($user) {
             $cache = [
                 'articles' => [],
             ];
